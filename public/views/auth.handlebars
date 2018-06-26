@@ -1,0 +1,183 @@
+<html>
+<head>
+	<title>Twitch Auth Sample</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<script src="//cdn.tmijs.org/js/latest/1.x/tmi.min.js"></script>
+	<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+	<script type="text/javascript">
+		var messages = [];
+		function userDetails(id) {
+			alert("Id is" + id + "\nMessage is " + messages[id].msg + "\nDone by user " + messages[id].userstate);
+			console.log(messages[id].userstate);
+		}
+
+
+		var options = {
+			options: {
+				debug: true
+			},
+			connection: {
+				reconnect: false
+			},
+			identity: {
+				username: "Ashkon",
+				password: "oauth:"
+			},
+			channels: ["#Ashkon"]
+		};
+var client = new tmi.client(options);
+
+client.connect();
+
+
+
+client.on("message", function (channel, userstate, message, self) {
+    // Don't listen to my own messages..
+    if (self) return;
+
+    // Handle different message types..
+    switch(userstate["message-type"]) {
+    	case "action":
+            // This is an action message..
+            break;
+            case "chat":
+            // This is a chat message..
+            //console.log("CHAT MESSAGE");
+            //console.log(message);
+            var msg = {}
+            msg["msg"] = message;
+            msg["userstate"] = userstate;
+            msg["channel"] = channel;
+            messages.push(msg);
+            var msgIdx = messages.length - 1;
+            $("#chatMessages").append("<li tabindex=\"1\"id="+ msgIdx +">" + message + "</span></a></li><button onclick=\"ban(this.id)\" id= " + msgIdx +">Ban</button>");
+            $('#chatMessages').scrollTop($('#chatMessages')[0].scrollHeight);
+            break;
+            case "whisper":
+            // This is a whisper..
+            break;
+            default:
+            // Something else ?
+            break;
+        }
+    });
+
+client.on("ban", function(channel, username, reason){
+	console.log(channel);
+	console.log(username);
+	console.log(reason);
+});
+function ban(message, userstate){
+			//client.ban("")
+			console.log(messages[id]);
+			const message = messages[id];
+			const channel = message.channel;
+			const user = message.userstate.username;
+			const user_message = message.msg;
+			client.ban(channel, user, "TEST");
+			//log_action(user, message, "ban", "Ashkon", "Theyre being a fuck", channel);
+			//get_user_messages(user);
+		}
+
+function timeout(id){
+
+}
+
+function log_action(user, message, action, mod, reason, channel){
+	const data = {"user": user,
+				  "message": message,
+				  "action": action,
+				  "mod": mod,
+				  "reason": reason,
+				  "channel": channel
+				}
+	axios.post('api/v1/log_action', data).then(function (response) {
+					console.log(response);
+				}).catch(function (error) {
+					console.log(error);
+				});
+}
+
+function get_user_messages(user){
+	const data = { "user": user }
+	axios.get('api/v1/messages', data).then(
+		function(response) {
+			console.log(response);
+		}).catch(function(error){
+			console.log(error);
+		});
+}
+
+function update_user_ban_log(){
+
+}
+
+function get_user_ban_log(){
+
+}
+// jQuery convention for running when the document has been fully loaded:
+$(document).ready(() => {
+
+	$('#channelButton').click(() => {
+		client.disconnect();
+		const channel_name = $('#channelName').val();
+		$('#video1').attr('src',"http://player.twitch.tv/?channel=" + channel_name);
+		console.log(options);
+		options["channels"] = ["#" + channel_name];
+		//client = new tmi.client(options);
+		client.options = options;
+		console.log(Object.getOwnPropertyNames(client));
+		client.connect();
+	});
+///////////  Twitch Chat /////////////////
+// Connect the client to the server..
+
+
+
+//////////////////////////
+
+  // define a generic Ajax error handler:
+  // http://api.jquery.com/ajaxerror/
+  $(document).ajaxError(() => {
+  	$('#status').html('Error: unknown ajaxError!');
+  });
+});
+
+
+	</script>
+</head>
+<body>
+	<table>
+		<tr><th>Access Token</th><td>{{accessToken}}</td></tr>
+		<tr><th>Refresh Token</th><td>{{refreshToken}}</td></tr>
+		<tr><th>Display Name</th><td>{{display_name}}</td></tr>
+		<tr><th>Bio</th><td>{{bio}}</td></tr>
+		<tr><th>Image</th><td>{{logo}}</td></tr>
+	</table>
+	<div>
+		Channel Name<br>
+		<input type="text" id="channelName" value="Shroud">
+		<br>
+		<button id="channelButton">Submit</button>
+	</div>
+	<iframe
+	id = "video1"
+	class="video1"
+	src="http://player.twitch.tv/?channel=Shroud"
+	height="405"
+	width="710"
+	frameborder="0"
+	scrolling="no"
+	allowfullscreen="true">
+</iframe>
+<iframe
+			id = "chat"
+			frameborder="0"
+	        scrolling="no"
+	        id="chat_embed"
+	        src="http://www.twitch.tv/embed/shroud/chat"
+	        height="370"
+	        width="710">
+		</iframe>
+</body>
+</html>
